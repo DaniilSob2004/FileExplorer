@@ -13,9 +13,9 @@ namespace FileExplorer
 {
     public static class FileWork
     {
-        public static string GetFileType(string filePath)
+        public static string GetFileType(string filePath)  // возвращает тип файла
         {
-            return  Path.GetExtension(filePath).ToUpper() + " File";
+            return Path.GetExtension(filePath).ToUpper() + " File";
         }
 
         public static string FormatBytes(long bytes)
@@ -30,6 +30,7 @@ namespace FileExplorer
                 suffixIndex++;
             }
 
+            // возвращает число в строковом формате с объёмом занимаемой памяти
             return $"{size:0.##} {suffixes[suffixIndex]}";
         }
 

@@ -10,7 +10,6 @@
 
     <Window.Resources>
         <!-- стиль для текстового поля в нередактируемом состоянии -->
-        <!-- TargetType - в данном случае необходим, чтобы Setter-элементы распознавали имеющиеся свойства -->
         <Style x:Key="myEditBoxStyle" TargetType="{x:Type TextBox}" >
             <Setter Property="HorizontalAlignment" Value="Left" />
             <!-- свойство Template описывает шаблон внешнего вида -->
@@ -40,6 +39,7 @@
         <CommandBinding Command="{x:Static local:FileCommands.NoneSelected}" Executed="NoneSelected_Executed"/>
         <CommandBinding Command="{x:Static local:FileCommands.SaveRenamePath}" Executed="SaveRenamePath_Executed"/>
         <CommandBinding Command="{x:Static local:FileCommands.NewFolder}" Executed="NewFolder_Executed"/>
+        <CommandBinding Command="{x:Static local:FileCommands.NewFile}" Executed="NewFile_Executed"/>
     </Window.CommandBindings>
     
     <Grid>
@@ -61,29 +61,29 @@
                     <DockPanel HorizontalAlignment="Left"/>
                 </ItemsPanelTemplate>
             </Menu.ItemsPanel>
-            <MenuItem Header="File" Height="25" Padding="10,0,10,0">
-                <MenuItem Header="Open Windows cmd" Background="#FF383838" Width="240" Height="30" Click="MenuItemOpenCmd_Click">
+            <MenuItem Header="File" Height="25" Padding="10,0,10,0" BorderThickness="0">
+                <MenuItem Header="Open Windows cmd" Background="#FF383838" Width="240" Height="30" BorderThickness="0" Click="MenuItemOpenCmd_Click">
                     <MenuItem.Icon>
                         <Image Width="17" Height="17" Source="Images/cmd.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Open Windows PowerShell" Background="#FF383838" Width="240" Height="30" Click="MenuItemOpenPowershell_Click_1">
+                <MenuItem Header="Open Windows PowerShell" Background="#FF383838" Width="240" Height="30" BorderThickness="0" Click="MenuItemOpenPowershell_Click_1">
                     <MenuItem.Icon>
                         <Image Width="17" Height="17" Source="Images/powershell.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <Separator/>
-                <MenuItem Header="Zip" Background="#FF383838" Width="240" Height="30" Command="{x:Static local:FileCommands.Zip}">
+                <Separator Background="#FF383838" BorderThickness="0"/>
+                <MenuItem Header="Zip" Background="#FF383838" Width="240" Height="30" BorderThickness="0" Command="{x:Static local:FileCommands.Zip}">
                     <MenuItem.Icon>
                         <Image Width="18" Height="18" Source="Images/zip.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Extract zip" Background="#FF383838" Width="240" Height="30" Command="{x:Static local:FileCommands.ExtractZip}">
+                <MenuItem Header="Extract zip" Background="#FF383838" Width="240" Height="30" BorderThickness="0" Command="{x:Static local:FileCommands.ExtractZip}">
                     <MenuItem.Icon>
                         <Image Width="18" Height="18" Source="Images/un_zip.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <Separator/>
+                <Separator Background="#FF383838" BorderThickness="0"/>
                 <MenuItem Header="Close" Background="#FF383838" Width="240" Height="30" Click="MenuItemClose_Click_2">
                     <MenuItem.Icon>
                         <Image Width="17" Height="17" Source="Images/close.png"/>
@@ -346,40 +346,42 @@
 
         <ListView x:Name="listView" Grid.Row="2" Grid.Column="2" Background="#FF252525" BorderBrush="#FF424242" SelectionChanged="ListView_SelectionChanged" MouseDoubleClick="ListView_MouseDoubleClick">
             <ListView.Resources>
-                <ContextMenu x:Key="ItemContextMenu" BorderThickness="0" Background="#FF383838" BorderBrush="#FF383838">
+                <ContextMenu x:Key="ItemContextMenu" BorderThickness="0" Background="#FF383838">
                     <MenuItem Background="#FF383838" Foreground="White" Header="Compression (zipped) folder" Command="{x:Static local:FileCommands.Zip}">
                         <MenuItem.Icon>
                             <Image Width="20" Height="20" Source="Images/zip.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Background="#FF383838" Foreground="White" Header="Extract (zipped) folder" Command="{x:Static local:FileCommands.ExtractZip}">
+                    <MenuItem Background="#FF383838" Foreground="White" Header="Extract (zipped) folder" BorderThickness="0" Command="{x:Static local:FileCommands.ExtractZip}">
                         <MenuItem.Icon>
                             <Image Width="20" Height="20" Source="Images/un_zip.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator/>
-                    <MenuItem Background="#FF383838" Foreground="White" Header="Rename" Command="{x:Static local:FileCommands.RenamePath}">
+                    <MenuItem Background="#FF383838" Foreground="White" Header="Rename" BorderThickness="0" Command="{x:Static local:FileCommands.RenamePath}">
                         <MenuItem.Icon>
                             <Image Width="20" Height="20" Source="Images/rename.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator/>
-                    <MenuItem Background="#FF383838" Foreground="White" Header="Properties" Command="{x:Static local:FileCommands.Properties}">
+                    <MenuItem Background="#FF383838" Foreground="White" Header="Properties" BorderThickness="0" Command="{x:Static local:FileCommands.Properties}">
                         <MenuItem.Icon>
                             <Image Width="20" Height="20" Source="Images/properties.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>
 
-                <ContextMenu x:Key="listViewContextMenu" BorderThickness="0" Background="#FF383838" BorderBrush="#FF383838">
-                    <MenuItem Background="#FF383838" Foreground="White" Header="New">
-                        <MenuItem Background="#FF383838" Foreground="White" Header="Folder" Command="{x:Static local:FileCommands.NewFolder}">
+                <ContextMenu x:Key="listViewContextMenu" BorderThickness="0" Background="#FF383838">
+                    <MenuItem Background="#FF383838" Foreground="White" Header="New" BorderThickness="0">
+                        <MenuItem Background="#FF383838" Foreground="White" Header="Folder" BorderThickness="0" Command="{x:Static local:FileCommands.NewFolder}">
                             <MenuItem.Icon>
                                 <Image Width="20" Height="20" Source="Images/dir.png"/>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Background="#FF383838" Foreground="White" Header="File" BorderThickness="0" Command="{x:Static local:FileCommands.NewFile}">
+                            <MenuItem.Icon>
+                                <Image Width="20" Height="20" Source="Images/file.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
-                    <Separator/>
                 </ContextMenu>
 
                 <Style TargetType="GridViewColumnHeader">

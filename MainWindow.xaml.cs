@@ -588,6 +588,25 @@ namespace FileExplorer
                 MessageBox.Show("Невозможно создать папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
+
+        // обработчик для комманды NewFile
+        private void NewFile_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (typeListView == TypeListView.Base)
+            {
+                try
+                {
+                    string dirdefaultName = $"new_file_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}";
+                    using (FileStream fs = File.Create(System.IO.Path.Combine(OpenDir, dirdefaultName))) {}
+                    baseListView.UpdateDrawDir();
+                }
+                catch (Exception) { }
+            }
+            else
+            {
+                MessageBox.Show("Невозможно создать папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
     }
 
     public class CreateZipArguments
@@ -616,6 +635,7 @@ namespace FileExplorer
             RenamePath = new RoutedCommand("RenamePath", typeof(FileCommands));
             SaveRenamePath = new RoutedCommand("NoneSelected", typeof(FileCommands));
             NewFolder = new RoutedCommand("NewFolder", typeof(FileCommands));
+            NewFile = new RoutedCommand("NewFile", typeof(FileCommands));
         }
         public static RoutedCommand Zip { get; set; }
         public static RoutedCommand ExtractZip { get; set; }
@@ -625,5 +645,6 @@ namespace FileExplorer
         public static RoutedCommand RenamePath { get; set; }
         public static RoutedCommand SaveRenamePath { get; set; }
         public static RoutedCommand NewFolder { get; set; }
+        public static RoutedCommand NewFile { get; set; }
     }
 }
