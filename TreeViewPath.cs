@@ -12,13 +12,18 @@ namespace FileExplorer
 {
     public class TreeViewPath
     {
-        public static Brush brush = new SolidColorBrush(FromArgb(0xFF, 0x1B, 0x1B, 0x1B));
-        private static string[] basePaths = { GetFolderPath(SpecialFolder.Desktop), GetFolderPath(SpecialFolder.MyDocuments),
+        public static Brush brush = new SolidColorBrush(FromArgb(0xFF, 0x1B, 0x1B, 0x1B));  // кисть по умолчанию
+
+        // массив путей к основным папкам (Desktop, Documents, Downloads, Music, Pictures, Videos)
+        private static string[] basePaths = { GetFolderPath(SpecialFolder.Desktop),
+                                              GetFolderPath(SpecialFolder.MyDocuments),
                                               Path.Combine(GetFolderPath(SpecialFolder.UserProfile), "Downloads"),
-                                              GetFolderPath(SpecialFolder.MyMusic), GetFolderPath(SpecialFolder.MyPictures),
+                                              GetFolderPath(SpecialFolder.MyMusic),
+                                              GetFolderPath(SpecialFolder.MyPictures),
                                               GetFolderPath(SpecialFolder.MyVideos)};
-        private static string[] baseNames = { "Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos" };
-        private static List<TreeViewItem> expandedItems = new List<TreeViewItem>();
+
+        private static string[] baseNames = { "Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos" };  // основные названия папок
+        private static List<TreeViewItem> expandedItems = new List<TreeViewItem>();  // коллекция раскрытых в дереве элементов TreeViewItem
 
         private TreeView treeView;
         private MainWindow parent;
@@ -36,24 +41,27 @@ namespace FileExplorer
 
         private void StartSettings()
         {
-            DrawBasePaths();
-            DrawDisks();
+            DrawBasePaths();  // отображаем дерево основных папок
+            DrawDisks();  // отображаем дерево дисков на ПК
         }
 
 
         private void DrawBasePaths()
         {
+            // создаём верхнюю иерархию дерева: Quick Access, Recycle, и This PC
             string getCurrentDir = Directory.GetCurrentDirectory();
             CreateTreeViewItem(null, "Quick Access", "", Path.Combine(getCurrentDir, "Images", "quick_access.png"), 15, false);
             CreateTreeViewItem(null, "Recycle", "", Path.Combine(getCurrentDir, "Images", "recycle.png"), 15, false);
             CreateTreeViewItem(null, "This PC", "", Path.Combine(getCurrentDir, "Images", "pc.png"), 15, false);
 
+            // создаём поддерево с основными папками в дереве This PC
             for (int i = 0; i < basePaths.Length; i++)
                 CreateTreeViewItem((TreeViewItem)treeView.Items[2], baseNames[i], basePaths[i], basePaths[i]);
         }
 
         private void DrawDisks()
         {
+            // создаём поддерево с дисками в дереве This PC
             DriveInfo[] drives = DriveInfo.GetDrives();
             for (int i = 0; i < drives.Length; i++)
             {
@@ -68,44 +76,36 @@ namespace FileExplorer
             {
                 try
                 {
-                    item.Items.Clear();
+                    item.Items.Clear();  // очищаем элементы дерева
 
-                    string getCurrentDir = Directory.GetCurrentDirectory();
-                    string[] dirs = Directory.GetDirectories(path);
-                    foreach (string dir in dirs)
-                    {
-                        CreateTreeViewItem(item, Path.GetFileName(dir), dir, Path.Combine(getCurrentDir, "Images", "dir.png"), 2, false);
-                    }
+                    foreach (string dir in Directory.GetDirectories(path))
+                        CreateTreeViewItem(item, Path.GetFileName(dir), dir, Path.Combine(Directory.GetCurrentDirectory(), "Images", "dir.png"), 2, false);
                 }
                 catch (UnauthorizedAccessException) { }
-            }
-            else
-            {
-                //MessageBox.Show("Такого пути не существует!");
             }
         }
 
         private void CreateTreeViewItem(TreeViewItem item, string title, string tag, string imagePath, int margin = 2, bool isFindIcon = true)
         {
-            TreeViewItem newItem = new TreeViewItem() { Margin = new Thickness(0, margin, 0, 0) };
-            StackPanel stackPanel = new StackPanel() { Orientation = Orientation.Horizontal, Height = 23 };
+            StackPanel stackPanel = new StackPanel() { Orientation = Orientation.Horizontal, Height = 23 };  // создаём контейнер для элемента дерева
 
             MyImage? im;
-            if (isFindIcon)
+            if (isFindIcon)  // если нужно найти картинку
             {
                 im = PrototypeImage.GetByTag(Path.GetExtension(title));
-                if (im == null)
+                if (im == null)  // если картинки в хранилище нет, то создаём и добавляем
                     im = PrototypeImage.AddImage(new MyImage() { Image = Icon.GetFileIcon(imagePath), Tag = title });    
             }
             else
             {
-                string imTag = (tag == "") ? title : "dir";
+                string imTag = (tag == "") ? title : "dir";  // если тэг не пустой, значит это директория(обычная папка)
                 im = PrototypeImage.GetByTag(imTag);
-                if (im == null)
+                if (im == null)  // если картинки в хранилище нет, то создаём и добавляем
                     im = PrototypeImage.AddImage(new MyImage() { Image = new BitmapImage(new Uri(imagePath)), Tag = imTag });
             }
-            Image image = new Image() { Width = 20, Height = 20, Source = im.Image };
+            Image image = new Image() { Width = 20, Height = 20, Source = im.Image };  // создаём объект Image, в Source передаём ссылку из объекта MyImages
 
+            // создаём текстовый блок, для вывода названия в элементе дерева
             TextBlock textBlock = new TextBlock()
             {
                 Text = title,
@@ -114,11 +114,17 @@ namespace FileExplorer
                 FontSize = 12,
             };
 
+            // добавляем в контейнер картинку и текст
             stackPanel.Children.Add(image);
             stackPanel.Children.Add(textBlock);
 
-            newItem.Header = stackPanel;
-            newItem.Tag = tag;
+            // создаём элемент дерева, в Header передаём контейнер
+            TreeViewItem newItem = new TreeViewItem()
+            { 
+                Header = stackPanel,
+                Tag = tag,
+                Margin = new Thickness(0, margin, 0, 0)
+            };
 
             newItem.MouseUp += parent.TreeViewItem_MouseUp;
             newItem.MouseEnter += parent.NewItem_MouseEnter;
@@ -126,25 +132,26 @@ namespace FileExplorer
             newItem.Expanded += parent.NewItem_Expanded;
             newItem.Collapsed += parent.NewItem_Collapsed;
 
+            // если элемент дерева в который добавляем элемент равняется null, значит это корень дерева
             if (item == null) treeView.Items.Add(newItem);
             else
             {
-                AddPassItem(newItem);
-                item.Items.Add(newItem);
+                AddPassItem(newItem);  // добавляем заглушку в элемент дерева
+                item.Items.Add(newItem);  // добавление элемента в дерево
             }
         }
 
         public void UpdateDrawDir()
         {
-            GetExpandedTreeViewItems((TreeViewItem)treeView.Items[2]);
+            GetExpandedTreeViewItems((TreeViewItem)treeView.Items[2]);  // получение всех раскрытых элементов дерева
 
             foreach (var item in expandedItems)
             {
-                item.Items.Clear();
-                DrawDir(item, GetTag(item));
+                item.Items.Clear();  // очищаем
+                DrawDir(item, GetTag(item));  // отображаем снова
             }
 
-            ClearExpandedItems();
+            ClearExpandedItems();  // очищаем коллекцию раскрытых элементов
         }
 
 
@@ -158,7 +165,7 @@ namespace FileExplorer
             foreach (object item in parentItem.Items)
             {
                 TreeViewItem treeViewItem = (TreeViewItem)item;
-                if (treeViewItem != null && treeViewItem.IsExpanded)
+                if (treeViewItem != null && treeViewItem.IsExpanded)  // если элемент есть и он раскрыт, то добавляем в коллекцию
                 {
                     expandedItems.Add(treeViewItem);
                     GetExpandedTreeViewItems(treeViewItem);  // рекурсия для дочерних элементов
@@ -196,7 +203,7 @@ namespace FileExplorer
 
         public void AddPassItem(TreeViewItem item)
         {
-            item.Items.Add(new TreeViewItem() { Header = "pass" });
+            item.Items.Add(new TreeViewItem() { Header = "pass" });  // добавляение заглушки(один элемент, чтобы было видно что элементы внутри элемента есть)
         }
     }
 }

@@ -10,8 +10,8 @@
 
     <Window.Resources>
         <!-- стиль для текстового поля в нередактируемом состоянии -->
-        <Style x:Key="myEditBoxStyle" TargetType="{x:Type TextBox}" >
-            <Setter Property="HorizontalAlignment" Value="Left" />
+        <Style x:Key="myEditBoxStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="HorizontalAlignment" Value="Left"/>
             <!-- свойство Template описывает шаблон внешнего вида -->
             <Setter Property="Template">
                 <Setter.Value>
@@ -26,10 +26,12 @@
         </Style>
     </Window.Resources>
 
+    <!-- привязка команды на клавишу Enter -->
     <Window.InputBindings>
         <KeyBinding Command="{x:Static local:FileCommands.SaveRenamePath}" Key="Return"/>
     </Window.InputBindings>
 
+    <!-- привязка команд к обработчикам -->
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:FileCommands.Zip}" Executed="Zip_Executed"/>
         <CommandBinding Command="{x:Static local:FileCommands.ExtractZip}" Executed="ExtractZip_Executed"/>
@@ -307,13 +309,10 @@
                 <TextBox.Template>
                     <ControlTemplate TargetType="TextBox">
                         <Grid>
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}">
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                                 <ScrollViewer x:Name="PART_ContentHost"/>
                             </Border>
-                            <Image Source="Images/dir3.ico" Width="16" Height="16" Margin="10,0,0,0"
-                                   HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <Image Source="Images/dir3.ico" Width="16" Height="16" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
                             <Button BorderThickness="0" Background="#FF1B1B1B" Margin="0,1,1,1" HorizontalAlignment="Right" Padding="3,0,3,0" Click="ButtonRefresh_Click">
                                 <Image Width="20" Height="20" Margin="0,0,0,0" Source="Images/refresh.png"/>
@@ -328,9 +327,7 @@
                 <TextBox.Template>
                     <ControlTemplate TargetType="TextBox">
                         <Grid>
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}">
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                                 <ScrollViewer x:Name="PART_ContentHost"/>
                             </Border>
                             <Image Source="Images/search.png" Width="16" Height="16" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>

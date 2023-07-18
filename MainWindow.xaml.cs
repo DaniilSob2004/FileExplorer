@@ -1,61 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.IO;
 using System.ComponentModel;
-using System.IO.Compression;
 
 namespace FileExplorer
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        enum TypeListView { Base, ThisPC, Recycle };
+        enum TypeListView { Base, ThisPC, Recycle };  // перечисления для корней дерева
 
-        BackgroundWorker worker, workerExtract;
-        ProgressWindow progressWindow, progressWindowExtract;
+        BackgroundWorker worker, workerExtract;  // доп. потоки для архивации и распаковки
+        ProgressWindow progressWindow, progressWindowExtract;  // доп. окна для архивации и распаковки
 
-        TypeListView typeListView;
-        TreeViewPath treeViewPath;
-        BaseListView baseListView;
-        FolderNavigation folderNavigation;
-        string openDir;
+        TypeListView typeListView;  // какой корневой элемент дерева сейчас открыт
+        TreeViewPath treeViewPath;  // для отображения дерева
+        BaseListView baseListView;  // ссылка на базовый класс для отображения списка
+        FolderNavigation folderNavigation;  // для навигации по списку
+        string openDir;  // какая директория сейчас открыта
 
-        bool isChangeFileName;
-        string oldName;
+        bool isChangeFileName;  // изменяется ли сейчас название файла/папки
+        string oldName;  // старое название файла/папки
 
 
         public MainWindow()
         {
             InitializeComponent();
+            StartSettings();
+        }
 
+        private void StartSettings()
+        {
+            // настройка BackgroundWorker-а для архивации
             worker = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true };
             worker.DoWork += Worker_DoWork;
             worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
             worker.ProgressChanged += Worker_ProgressChanged;
 
+            // настройка BackgroundWorker-а для распаковки
             workerExtract = new BackgroundWorker() { WorkerReportsProgress = true, WorkerSupportsCancellation = true };
             workerExtract.DoWork += WorkerExtract_DoWork;
             workerExtract.RunWorkerCompleted += WorkerExtract_RunWorkerCompleted;
             workerExtract.ProgressChanged += WorkerExtract_ProgressChanged;
 
             treeViewPath = new TreeViewPath(this);
-            MyStatusItems.SetParent(this);
+            MyStatusItems.SetParent(this);  // настраиваем родителя для MyStatusItems
             folderNavigation = new FolderNavigation();
 
-            ChangeTypeListView(TypeListView.ThisPC);
-            OpenDir = "This PC";
-            folderNavigation.AddPathNavigation(OpenDir);
+            ChangeTypeListView(TypeListView.ThisPC);  // по умолчанию будет отображаться элемент дерева ThisPC
+            OpenDir = "This PC";  // открытая директория
+            folderNavigation.AddPathNavigation(OpenDir);  // добавляем в навигацию что посетили директорию ThisPC
 
             isChangeFileName = false;
             oldName = "";
@@ -65,7 +62,7 @@ namespace FileExplorer
         // реализация интерфейса INotifyPropertyChanged, для привязки свойства OpenDir и элемента TextBox.Text
         public string OpenDir
         {
-            get { return openDir; }
+            get => openDir;
             set
             {
                 if (openDir != value)
@@ -86,9 +83,12 @@ namespace FileExplorer
 
         private void ChangeTypeListView(TypeListView typeListView)
         {
+            // меняем открытую директорию у дерева
+
             this.typeListView = typeListView;
             switch (typeListView)
             {
+                // с помощью полиморфизма и паттерна 'Одиночка', получаем экземпляр объекта списка, который необходим
                 case TypeListView.Base:
                     baseListView = ListViewPath.GetInstance(this);
                     break;
@@ -101,8 +101,8 @@ namespace FileExplorer
                     baseListView = ListViewRecycle.GetInstance(this);
                     break;
             }
-            baseListView.StartSettings();
-            baseListView.DrawDir(OpenDir);
+            baseListView.StartSettings();  // начальные настройки для отображения списка
+            baseListView.DrawDir(OpenDir);  // отображение списка, передаём название директории которая сейчас открыта
         }
 
 
@@ -126,6 +126,7 @@ namespace FileExplorer
         // обработчики для TreeView
         internal void NewItem_MouseLeave(object sender, MouseEventArgs e)
         {
+            // меняем цвет элемента дерева, если курсор вышел из элемента
             TreeViewItem item = (TreeViewItem)sender;
             if (item != null)
             {
@@ -136,6 +137,7 @@ namespace FileExplorer
 
         internal void NewItem_MouseEnter(object sender, MouseEventArgs e)
         {
+            // меняем цвет элемента дерева, если на него попал курсор
             TreeViewItem item = (TreeViewItem)sender;
             if (item != null)
             {
@@ -149,9 +151,9 @@ namespace FileExplorer
             TreeViewItem item = (TreeViewItem)sender;
             if (item != null)
             {
-                item.IsExpanded = true;
+                item.IsExpanded = true;  // раскрываем элемент дерева
 
-                if (treeViewPath.GetHeader(item) == "This PC")
+                if (treeViewPath.GetHeader(item) == "This PC")  // если нажато по "This PC" и это не второй раз подряд, то меняем тип и открываем указанную директорию
                 {
                     if (typeListView != TypeListView.ThisPC)
                     {
@@ -159,7 +161,7 @@ namespace FileExplorer
                         ChangeTypeListView(TypeListView.ThisPC);
                     }
                 }
-                else if (treeViewPath.GetHeader(item) == "Recycle")
+                else if (treeViewPath.GetHeader(item) == "Recycle")  // если нажато по "Recycle" и это не второй раз подряд, то меняем тип и открываем указанную директорию
                 {
                     if (typeListView != TypeListView.Recycle)
                     {
@@ -171,20 +173,20 @@ namespace FileExplorer
                 else
                 {
                     OpenDir = treeViewPath.GetTag(item);
-                    if (typeListView != TypeListView.Base)
+                    if (typeListView != TypeListView.Base)  // если нажали не второй раз подряд, то меняем тип и открываем указанную директорию
                         ChangeTypeListView(TypeListView.Base);
                     else
-                        baseListView.DrawDir(OpenDir);
+                        baseListView.DrawDir(OpenDir);  // отображаем указанную директорию
                 }
 
-                folderNavigation.AddPathNavigation(OpenDir);  // история навигации
-
+                folderNavigation.AddPathNavigation(OpenDir);  // добавляем директорию в историю навигации
                 e.Handled = true;
             }
         }
 
         internal void NewItem_Expanded(object sender, RoutedEventArgs e)
         {
+            // при расширении элемента дерева, отображаем содержимое директории в дереве и списке
             TreeViewItem item = (TreeViewItem)sender;
             if (item != null)
             {
@@ -200,13 +202,14 @@ namespace FileExplorer
 
         internal void NewItem_Collapsed(object sender, RoutedEventArgs e)
         {
+            // при скрытии элемента дерева
             TreeViewItem item = (TreeViewItem)sender;
             if (item != null)
             {
-                if ((item.Parent as TreeView) == null)
+                if ((item.Parent as TreeView) == null)  // если родитель элемента жто не корень дерева
                 {
-                    item.Items.Clear();
-                    treeViewPath.AddPassItem(item);
+                    item.Items.Clear();  // очищаем
+                    treeViewPath.AddPassItem(item);  // добаляем заглушку
                     e.Handled = true;
                 }
             }
@@ -229,45 +232,35 @@ namespace FileExplorer
 
         internal void ListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            // используем метод FindAncestor<T>, чтобы найти предка элемента, который является экземпляром класса
-            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            // используем метод FindAncestor, чтобы найти предка элемента, который является экземпляром класса
+            ListViewItem listViewItem = FindAncestor((DependencyObject)e.OriginalSource);
 
             if (listViewItem != null)  // клик произошел на элементе ListView
             {
-                string filename = ((MyItem)listView.SelectedItem).Item2;
-                string filePath = System.IO.Path.Combine(OpenDir, filename);
-                if (File.Exists(filePath))
+                string filename = ((MyItem)listView.SelectedItem).Item2;  // узнаём название элемента (Item2 объекта MyItem это название)
+                string filePath = Path.Combine(OpenDir, filename);
+
+                if (File.Exists(filePath)) FileWork.OpenFile(filePath);  // если файл существует то открываем как приложение
+                else if(Directory.Exists(filePath))  // если это директория
                 {
-                    FileWork.OpenFile(filePath);
-                }
-                else if(Directory.Exists(filePath))
-                {
-                    if (typeListView != TypeListView.Recycle)
+                    if (typeListView != TypeListView.Recycle)  // если это не корзина
                     {
                         OpenDir = filePath;
-                        if (typeListView == TypeListView.Base)
-                        {
-                            baseListView.DrawDir(OpenDir);
-                        }
-                        else if (typeListView == TypeListView.ThisPC)
-                        {
-                            ChangeTypeListView(TypeListView.Base);
-                        }
+                        if (typeListView == TypeListView.Base) baseListView.DrawDir(OpenDir);
+                        else if (typeListView == TypeListView.ThisPC) ChangeTypeListView(TypeListView.Base);
                         folderNavigation.AddPathNavigation(OpenDir);  // история навигации
                     }
                 }
-                else
-                {
-                    MessageBox.Show("Невозможно открыть файл/папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
+                else MessageBox.Show("Невозможно открыть файл/папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
-        private static T FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        private static ListViewItem FindAncestor(DependencyObject current)
         {
+            // находим предка ListViewItem элемента current
             while (current != null)
             {
-                if (current is T target) return target;
+                if (current is ListViewItem target) return target;
                 current = VisualTreeHelper.GetParent(current);
             }
             return null;
@@ -293,22 +286,16 @@ namespace FileExplorer
 
         private void UpdateNavigation(string path)
         {
+            // обновляем директорию при навигации
             OpenDir = path;
-            if (path == "Recycle")
-            {
-                ChangeTypeListView(TypeListView.Recycle);
-            }
-            else if (path == "This PC")
-            {
-                ChangeTypeListView(TypeListView.ThisPC);
-            }
+
+            if (path == "Recycle") ChangeTypeListView(TypeListView.Recycle);
+            else if (path == "This PC") ChangeTypeListView(TypeListView.ThisPC);
             else if (path == "Quick Access") { }
             else
             {
-                if (typeListView != TypeListView.Base)
-                    ChangeTypeListView(TypeListView.Base);
-                else
-                    baseListView.DrawDir(OpenDir);
+                if (typeListView != TypeListView.Base) ChangeTypeListView(TypeListView.Base);
+                else baseListView.DrawDir(OpenDir);
             }
         }
 
@@ -320,17 +307,12 @@ namespace FileExplorer
             {
                 string path;
                 List<string> files = new List<string>(), dirs = new List<string>();
-                foreach (var item in listView.SelectedItems)
+
+                foreach (var item in listView.SelectedItems)  // перебираем все выделенные элементы списка
                 {
-                    path = System.IO.Path.Combine(OpenDir, ((MyItem)item).Item2);
-                    if (File.Exists(path))  // если это файл
-                    {
-                        files.Add(path);
-                    }
-                    else  // если это папка
-                    {
-                        dirs.Add(path);
-                    }
+                    path = Path.Combine(OpenDir, ((MyItem)item).Item2);  // узнаём название элемента списка
+                    if (File.Exists(path)) files.Add(path);
+                    else dirs.Add(path);
                 }
 
                 if (!worker.IsBusy)
@@ -343,47 +325,50 @@ namespace FileExplorer
             }
             else
             {
-                MessageBox.Show("Невозможно выполнить архивацию!", "Message", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Невозможно выполнить архивацию!", "Message", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void Worker_DoWork(object? sender, DoWorkEventArgs e)
         {
+            // начало работы BackgroundWorker-а
             try
             {
+                // для того чтобы можно в другом потоке изменять интерфейс окна
                 Application.Current.Dispatcher.Invoke(() =>
                 {
+                    // запускаем окно для отображения прогресса
                     progressWindow = new ProgressWindow(this, "Zip");
                     progressWindow.Show();
                 });
-                FileWork.DeleteFile(FileWork.CreateZip(e, worker));
+                FileWork.DeleteFile(FileWork.CreateZip(e, worker));  // запускаем архиватор и если возвращаемое значение будет не пустая строка, то удаляем
             }
             catch (UnauthorizedAccessException)
             {
                 var answer = MessageBox.Show("Нельзя сохранять в этой директории .zip файлы\nХотите разместить на рабочем столе?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (answer == MessageBoxResult.Yes)
                 {
+                    // меняем название директории у объекта для передачи параметра
                     ((CreateZipArguments)e.Argument).NameDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                    FileWork.DeleteFile(FileWork.CreateZip(e, worker));
+                    FileWork.DeleteFile(FileWork.CreateZip(e, worker));  // запускаем архиватор и если возвращаемое значение будет не пустая строка, то удаляем
                 }
             }
         }
 
         private void Worker_ProgressChanged(object? sender, ProgressChangedEventArgs e)
         {
+            // меняем значение текстового поля и прогресс-бара
             progressWindow.textBoxValue.Text = e.ProgressPercentage.ToString() + "%";
             progressWindow.progressBar.Value = e.ProgressPercentage;
         }
 
         private void Worker_RunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
         {
-            progressWindow.Close();
-            if (e.Error != null)
-            {
-                MessageBox.Show(e.Error.Message + "\n" + e.Error.Data + "\n" + e.Error.InnerException);
-            }
+            // завершение работы BackgroundWorker-а
+            progressWindow.Close();  // закрываем окно для отображения прогресса
+            if (e.Error != null) MessageBox.Show("Что-то пошло не так! Не удалось успешно завершить архивацию!", "Error", MessageBoxButton.OK, MessageBoxImage.Information);
             else MessageBox.Show("Архивация прошла успешно!");
-            baseListView.UpdateDrawDir();
+            baseListView.UpdateDrawDir();  // обновляем отображение элементов в списке
         }
 
         public void CloseProgressWindow(string typeWorker)
@@ -395,15 +380,13 @@ namespace FileExplorer
 
         private void ExtractZip_Executed(object sender, ExecutedRoutedEventArgs e)
         {
+            // если открытая директория это Base (например: диск E, C, D и тд)
             if (typeListView == TypeListView.Base && listView.SelectedItems.Count == 1)
             {
-                string zipPath = System.IO.Path.Combine(OpenDir, ((MyItem)listView.SelectedItems[0]).Item2);
-                if (System.IO.Path.GetExtension(zipPath) == ".zip")
+                string zipPath = Path.Combine(OpenDir, ((MyItem)listView.SelectedItems[0]).Item2);  // получаем название
+                if (Path.GetExtension(zipPath) == ".zip")  // если это zip файл
                 {
-                    if (!worker.IsBusy)
-                    {
-                        workerExtract.RunWorkerAsync(zipPath);  // запуск фонового процесса с передачей аргумента
-                    }
+                    if (!worker.IsBusy) workerExtract.RunWorkerAsync(zipPath);  // запуск фонового процесса с передачей аргумента
                     else MessageBox.Show("Подождите пожалуйста, происходит отмена распаковки!");
                     return;
                 }
@@ -413,36 +396,29 @@ namespace FileExplorer
 
         private void WorkerExtract_DoWork(object? sender, DoWorkEventArgs e)
         {
+            // для того чтобы можно в другом потоке изменять интерфейс окна
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // запускаем окно для отображения прогресса
                 progressWindowExtract = new ProgressWindow(this, "Extract");
                 progressWindowExtract.Show();
             });
-            FileWork.DeleteDir(FileWork.ExtractZipFile(e, workerExtract));
+            FileWork.DeleteDir(FileWork.ExtractZipFile(e, workerExtract));  // запускаем распаковку и если возвращаемое значение будет не пустая строка, то удаляем
         }
 
         private void WorkerExtract_ProgressChanged(object? sender, ProgressChangedEventArgs e)
         {
+            // обновляем данные в интерфейсеы
             progressWindowExtract.textBoxValue.Text = e.ProgressPercentage.ToString() + "%";
             progressWindowExtract.progressBar.Value = e.ProgressPercentage;
         }
 
         private void WorkerExtract_RunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
         {
-            progressWindowExtract.Close();
-            if (e.Cancelled)
-            {
-                MessageBox.Show("Cancelled!");
-            }
-            else if (e.Error != null)
-            {
-                MessageBox.Show(e.Error.Message + "\n" + e.Error.Data + "\n" + e.Error.InnerException);
-            }
-            else
-            {
-                MessageBox.Show("Распаковка архива прошла успешно!");
-            }
-            baseListView.UpdateDrawDir();
+            progressWindowExtract.Close();  // закрываем окно для отображения прогресса
+            if (e.Error != null) MessageBox.Show("Что-то пошло не так! Не удалось успешно завершить распаковку!", "Error", MessageBoxButton.OK, MessageBoxImage.Information);
+            else MessageBox.Show("Распаковка архива прошла успешно!");
+            baseListView.UpdateDrawDir();  // обновляем отображение элементов в списке
         }
 
 
@@ -451,16 +427,15 @@ namespace FileExplorer
         {
             if (typeListView == TypeListView.Base)
             {
-                RenamePath_Executed(sender, null);
+                RenamePath_Executed(sender, null);  // вызов обработчика для команды
             }
             else
             {
-                string text = ((TextBox)sender).Text;
                 foreach (var item in listView.Items)
                 {
-                    if (((MyItem)item).Item2 == text)
+                    if (((MyItem)item).Item2 == ((TextBox)sender).Text)  // если название элемента списка равняется текстовому блоку(который находится на элементе спискаы)
                     {
-                        listView.SelectedItem = item;
+                        listView.SelectedItem = item;  // устанавливаем выделенный элемент списка т.к. затем вызовится обработчик ListView_MouseDoubleClick()
                         return;
                     }
                 }
@@ -469,29 +444,30 @@ namespace FileExplorer
 
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
+            // при потере фокуса для элемента TextBox у элемента списка
             if (isChangeFileName)
             {
                 TextBox textBox = (TextBox)sender;
                 try
                 {
-                    if (File.Exists(System.IO.Path.Combine(OpenDir, oldName)))
+                    if (File.Exists(Path.Combine(OpenDir, oldName)))  // если это файл
                     {
-                        if (System.IO.Path.GetExtension(oldName) != System.IO.Path.GetExtension(textBox.Text))
+                        if (Path.GetExtension(oldName) != Path.GetExtension(textBox.Text))  // если пользователь указал другое расширение 
                         {
                             var answer = MessageBox.Show("Вы действительно хотите изменить расширение файла?", "Question", MessageBoxButton.YesNo, MessageBoxImage.Question);
                             if (answer == MessageBoxResult.Yes)
-                                FileWork.EditFileName(System.IO.Path.Combine(OpenDir, oldName), textBox.Text);
+                                FileWork.EditFileName(Path.Combine(OpenDir, oldName), textBox.Text);  // меняем название
                         }
-                        else FileWork.EditFileName(System.IO.Path.Combine(OpenDir, oldName), textBox.Text);
+                        else FileWork.EditFileName(Path.Combine(OpenDir, oldName), textBox.Text);
                     }
                     else
-                        FileWork.EditDirName(System.IO.Path.Combine(OpenDir, oldName), textBox.Text);
+                        FileWork.EditDirName(Path.Combine(OpenDir, oldName), textBox.Text);  // если это папка, то меняем название
                 }
                 catch (Exception) {}
                 finally
                 {
-                    ((TextBox)sender).Style = (Style)(this.Resources["myEditBoxStyle"]);  // назначаем стиль
-                    baseListView.UpdateDrawDir();
+                    ((TextBox)sender).Style = (Style)(Resources["myEditBoxStyle"]);  // назначаем обратно стиль для TextBox элемента списка
+                    baseListView.UpdateDrawDir();  // обновляем содержимое списка
                 }
                 isChangeFileName = false;
             }
@@ -502,7 +478,7 @@ namespace FileExplorer
         private void Properties_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             if (listView.SelectedItems.Count == 1)
-                FileWork.GetProperties(System.IO.Path.Combine(OpenDir, ((MyItem)listView.SelectedItem).Item2));
+                FileWork.GetProperties(Path.Combine(OpenDir, ((MyItem)listView.SelectedItem).Item2));
         }
 
 
@@ -524,39 +500,35 @@ namespace FileExplorer
             if (typeListView == TypeListView.Base && listView.SelectedItems.Count <= 1)
             {
                 TextBox textBox = null;
-                if (sender is TextBox text)
+                if (sender is TextBox text)  // если был двойнок клик прям по элементу TextBox
                 {
                     textBox = text;
                 }
-                else
+                else  // если команда была вызвана с помощью контексного меню
                 {
+                    // находим контейнер у выделенного элемента списка и TextBox внутри этого контейнера
                     DependencyObject container = listView.ItemContainerGenerator.ContainerFromItem(listView.SelectedItem);
                     TextBox findText = FindVisualChild(container);
                     if (findText != null) textBox = findText;
                 }
-                textBox.Focus();
-                textBox.SelectAll();
-                textBox.Style = null;  // снимаем стиль
-                oldName = textBox.Text;
-                isChangeFileName = true;
+                textBox.Focus();  // устанавливаем фокус
+                textBox.SelectAll();  // выделяем весь текст
+                textBox.Style = null;  // снимаем стиль (чтобы можно было написать что-то)
+                oldName = textBox.Text;  // запоминаем старое название
+                isChangeFileName = true;  // меняем название
             }
-            else
-            {
-                MessageBox.Show("Нельзя изменить название!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            else MessageBox.Show("Нельзя изменить название!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         private void SaveRenamePath_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             // если это TextBox из ListView (т.к. они находятся в StackPanel)
-            if (Keyboard.FocusedElement is TextBox text && text.Parent is StackPanel)
-            {
-                listView.Focus();
-            }
+            if (Keyboard.FocusedElement is TextBox text && text.Parent is StackPanel) listView.Focus();
         }
 
         private TextBox FindVisualChild(DependencyObject parent)
         {
+            // находим элемент TextBox у элемента parent
             int childCount = VisualTreeHelper.GetChildrenCount(parent);
             for (int i = 0; i < childCount; i++)
             {
@@ -577,16 +549,13 @@ namespace FileExplorer
             {
                 try
                 {
-                    string dirdefaultName = $"new_folder_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}";
-                    Directory.CreateDirectory(System.IO.Path.Combine(OpenDir, dirdefaultName));
+                    string dirDefaultName = $"new_folder_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}";
+                    Directory.CreateDirectory(Path.Combine(OpenDir, dirDefaultName));
                     baseListView.UpdateDrawDir();
                 }
                 catch (Exception) {}
             }
-            else
-            {
-                MessageBox.Show("Невозможно создать папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            else MessageBox.Show("Невозможно создать папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         // обработчик для комманды NewFile
@@ -597,18 +566,16 @@ namespace FileExplorer
                 try
                 {
                     string dirdefaultName = $"new_file_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}";
-                    using (FileStream fs = File.Create(System.IO.Path.Combine(OpenDir, dirdefaultName))) {}
+                    using (FileStream fs = File.Create(Path.Combine(OpenDir, dirdefaultName))) {}
                     baseListView.UpdateDrawDir();
                 }
                 catch (Exception) { }
             }
-            else
-            {
-                MessageBox.Show("Невозможно создать папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            else MessageBox.Show("Невозможно создать папку!", "Message", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
+    // класс, для передачи этого типа ввиде одного аргумента (для архиватораы)
     public class CreateZipArguments
     {
         public List<string> SourceFiles { get; }
@@ -623,8 +590,19 @@ namespace FileExplorer
         }
     }
 
+    // класс, для созания команд
     public class FileCommands
     {
+        public static RoutedCommand Zip { get; set; }
+        public static RoutedCommand ExtractZip { get; set; }
+        public static RoutedCommand Properties { get; set; }
+        public static RoutedCommand AllSelected { get; set; }
+        public static RoutedCommand NoneSelected { get; set; }
+        public static RoutedCommand RenamePath { get; set; }
+        public static RoutedCommand SaveRenamePath { get; set; }
+        public static RoutedCommand NewFolder { get; set; }
+        public static RoutedCommand NewFile { get; set; }
+
         static FileCommands()
         {
             Zip = new RoutedCommand("Zip", typeof(FileCommands));
@@ -637,14 +615,5 @@ namespace FileExplorer
             NewFolder = new RoutedCommand("NewFolder", typeof(FileCommands));
             NewFile = new RoutedCommand("NewFile", typeof(FileCommands));
         }
-        public static RoutedCommand Zip { get; set; }
-        public static RoutedCommand ExtractZip { get; set; }
-        public static RoutedCommand Properties { get; set; }
-        public static RoutedCommand AllSelected { get; set; }
-        public static RoutedCommand NoneSelected { get; set; }
-        public static RoutedCommand RenamePath { get; set; }
-        public static RoutedCommand SaveRenamePath { get; set; }
-        public static RoutedCommand NewFolder { get; set; }
-        public static RoutedCommand NewFile { get; set; }
     }
 }

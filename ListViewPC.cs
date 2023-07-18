@@ -14,7 +14,7 @@ namespace FileExplorer
             StartSettings();
         }
 
-        public static BaseListView GetInstance(MainWindow parent)
+        public static BaseListView GetInstance(MainWindow parent)  // Паттерн ОДИНОЧКА
         {
             if (listViewPC == null)
             {
@@ -28,19 +28,20 @@ namespace FileExplorer
         {
             GridView gridView = new GridView() { AllowsColumnReorder = false };
 
+            // imageTextTemplate - это шаблон, для отображения контента в ListView
             GridViewColumn column1 = new GridViewColumn() { Header = "Name", Width = 250, CellTemplate = imageTextTemplate };
             gridView.Columns.Add(column1);
 
             GridViewColumn column2 = new GridViewColumn() { Header = "Type", Width = 150 };
-            column2.DisplayMemberBinding = new Binding("Item3");
+            column2.DisplayMemberBinding = new Binding("Item3");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column2);
 
             GridViewColumn column3 = new GridViewColumn() { Header = "Total Size", Width = 150 };
-            column3.DisplayMemberBinding = new Binding("Item4");
+            column3.DisplayMemberBinding = new Binding("Item4");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column3);
 
             GridViewColumn column4 = new GridViewColumn() { Header = "Free Space", Width = 150 };
-            column4.DisplayMemberBinding = new Binding("Item5");
+            column4.DisplayMemberBinding = new Binding("Item5");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column4);
 
             listView.View = gridView;
@@ -67,6 +68,7 @@ namespace FileExplorer
         {
             try
             {
+                // добавляем объект в коллекцию MyItem
                 items.Add(new MyItem
                 {
                     Item1 = PrototypeImage.GetByTag(drive.Name).Image,
@@ -75,7 +77,7 @@ namespace FileExplorer
                     Item4 = FileWork.FormatBytes(drive.TotalSize),
                     Item5 = FileWork.FormatBytes(drive.AvailableFreeSpace)
                 });
-                listView.Items.Add(items[items.Count - 1]);
+                listView.Items.Add(items[items.Count - 1]);  // добавляем объект MyItem, в коллекцию ListViewItems
             }
             catch (Exception) { }
         }

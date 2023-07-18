@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
@@ -15,7 +14,7 @@ namespace FileExplorer
 
         private ListViewRecycle(MainWindow parent) : base(parent) { }
 
-        public static BaseListView GetInstance(MainWindow parent)
+        public static BaseListView GetInstance(MainWindow parent)  // Паттерн ОДИНОЧКА
         {
             if (listViewRecycle == null)
             {
@@ -29,27 +28,28 @@ namespace FileExplorer
         {
             GridView gridView = new GridView() { AllowsColumnReorder = false };
 
+            // imageTextTemplate - это шаблон, для отображения контента в ListView
             GridViewColumn column1 = new GridViewColumn() { Header = "Name", Width = 300, CellTemplate = imageTextTemplate };
             gridView.Columns.Add(column1);
 
             GridViewColumn column2 = new GridViewColumn() { Header = "Original Location", Width = 250 };
-            column2.DisplayMemberBinding = new Binding("Item3");
+            column2.DisplayMemberBinding = new Binding("Item3");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column2);
 
             GridViewColumn column3 = new GridViewColumn() { Header = "Data Deleted", Width = 150 };
-            column3.DisplayMemberBinding = new Binding("Item4");
+            column3.DisplayMemberBinding = new Binding("Item4");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column3);
 
             GridViewColumn column4 = new GridViewColumn() { Header = "Size", Width = 120 };
-            column4.DisplayMemberBinding = new Binding("Item5");
+            column4.DisplayMemberBinding = new Binding("Item5");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column4);
 
             GridViewColumn column5 = new GridViewColumn() { Header = "Item type", Width = 150 };
-            column5.DisplayMemberBinding = new Binding("Item6");
+            column5.DisplayMemberBinding = new Binding("Item6");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column5);
 
             GridViewColumn column6 = new GridViewColumn() { Header = "Data modified", Width = 150 };
-            column6.DisplayMemberBinding = new Binding("Item7");
+            column6.DisplayMemberBinding = new Binding("Item7");  // привязка к свойству типа MyItem
             gridView.Columns.Add(column6);
 
             listView.View = gridView;
@@ -60,13 +60,13 @@ namespace FileExplorer
             ClearListItems();
 
             Shell shell = new Shell();
-            Folder recycleBin = shell.NameSpace(10);
+            Folder recycleBin = shell.NameSpace(10);  // получаем доступ к корзине
             foreach (FolderItem2 f in recycleBin.Items())
             {
                 CreateListViewItem(f, recycleBin.GetDetailsOf(f, 2), recycleBin.GetDetailsOf(f, 3));
             }
 
-            Marshal.FinalReleaseComObject(shell);
+            Marshal.FinalReleaseComObject(shell);  // освобождаем ресурсы
             base.DrawDir(path);
         }
 
@@ -83,22 +83,27 @@ namespace FileExplorer
 
                 if (f.IsFolder)
                 {
-                    string imagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "Images", "dir.png");
                     im = PrototypeImage.GetByTag("dir");
-                    if (im == null) im = PrototypeImage.AddImage(new MyImage() { Image = new BitmapImage(new Uri(imagePath)), Tag = "dir" });
+                    if (im == null)  // если в хранилище такой картинки нет
+                    {
+                        // создаём и добавляем в хранилище
+                        string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "Images", "dir.png");
+                        im = PrototypeImage.AddImage(new MyImage() { Image = new BitmapImage(new Uri(imagePath)), Tag = "dir" });
+                    }
                 }
                 else
                 {
-                    string extension = System.IO.Path.GetExtension(f.Name);
+                    string extension = Path.GetExtension(f.Name);
                     if (extension != ".exe" && extension != ".lnk")
                     {
                         im = PrototypeImage.GetByTag(extension);
-                        if (im == null) im = PrototypeImage.AddImage(new MyImage() { Image = Icon.GetFileIcon(System.IO.Path.Combine(f.Path, f.Name)), Tag = extension });
+                        // создаём и добавляем в хранилище
+                        if (im == null) im = PrototypeImage.AddImage(new MyImage() { Image = Icon.GetFileIcon(Path.Combine(f.Path, f.Name)), Tag = extension });
                     }
-                    else im = new MyImage { Image = Icon.GetFileIcon(System.IO.Path.Combine(f.Path, f.Name)) };
+                    else im = new MyImage { Image = Icon.GetFileIcon(Path.Combine(f.Path, f.Name)) };
                 }
 
-                items.Add(new MyItem
+                items.Add(new MyItem  // добавляем объект в коллекцию MyItem
                 {
                     Item1 = im.Image,
                     Item2 = f.Name,
@@ -108,12 +113,9 @@ namespace FileExplorer
                     Item6 = f.Type.ToString(),
                     Item7 = f.ModifyDate.ToString()
                 });
-                listView.Items.Add(items[items.Count - 1]);
+                listView.Items.Add(items[items.Count - 1]);  // добавляем объект MyItem, в коллекцию ListViewItems
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            catch (Exception) { }
         }
 
 

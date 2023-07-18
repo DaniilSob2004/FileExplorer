@@ -36,8 +36,7 @@ namespace FileExplorer
 
         public static long GetFileSize(string filePath)
         {
-            FileInfo file = new FileInfo(filePath);
-            return file.Length;
+            return new FileInfo(filePath).Length;
         }
 
         public static long GetFolderSize(string folderPath)
@@ -45,11 +44,11 @@ namespace FileExplorer
             DirectoryInfo directoryInfo = new DirectoryInfo(folderPath);
             long totalSize = 0;
 
-            foreach (FileInfo file in directoryInfo.GetFiles())
+            foreach (FileInfo file in directoryInfo.GetFiles())  // прибавляем размеры файлов
             {
                 totalSize += file.Length;
             }
-            foreach (DirectoryInfo subDirectory in directoryInfo.GetDirectories())
+            foreach (DirectoryInfo subDirectory in directoryInfo.GetDirectories())  // рекурсия для директорий
             {
                 totalSize += GetFolderSize(subDirectory.FullName);
             }
@@ -59,6 +58,7 @@ namespace FileExplorer
 
         public static long GetCountFileInFolder(string folderPath)
         {
+            // подсчёт всех файлов в директории
             DirectoryInfo directoryInfo = new DirectoryInfo(folderPath);
             long count = 0;
 
@@ -76,6 +76,7 @@ namespace FileExplorer
 
         public static long AllCountFiles(List<string> files, List<string> dirs)
         {
+            // подсчёт всех файлов в директории
             long allCount = 0;
 
             allCount += files.Count;
@@ -89,6 +90,7 @@ namespace FileExplorer
 
         public static void OpenFile(string path)
         {
+            // открытие файла приложения
             try
             {
                 Process.Start(new ProcessStartInfo
@@ -105,22 +107,22 @@ namespace FileExplorer
 
         public static void OpenWindowsCmd(string openDir)
         {
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            // открытие командной строки по указанному пути
+            Process.Start(new ProcessStartInfo
             {
                 FileName = "cmd.exe",
                 WorkingDirectory = openDir
-            };
-            Process.Start(startInfo);
+            });
         }
 
         public static void OpenWindowsPowershell(string openDir)
         {
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            // открытие Powershell по указанному пути
+            Process.Start(new ProcessStartInfo
             {
                 FileName = "powershell.exe",
                 WorkingDirectory = openDir
-            };
-            Process.Start(startInfo);
+            });
         }
 
         public static void DeleteFile(string path)
@@ -187,7 +189,7 @@ namespace FileExplorer
                 folderItem.InvokeVerb("Properties");
             }
 
-            Marshal.FinalReleaseComObject(shell);
+            Marshal.FinalReleaseComObject(shell);  // освобождаем ресурсыы
         }
 
         public static string CreateZip(DoWorkEventArgs e, BackgroundWorker worker)
@@ -200,10 +202,10 @@ namespace FileExplorer
             List<string> sourceDirs = arguments.SourceDirs;
             string nameDir = arguments.NameDir;
 
-            long allCount = AllCountFiles(sourceFiles, sourceDirs);
+            long allCount = AllCountFiles(sourceFiles, sourceDirs);  // получаем кол-во файлов внутри директории
             long nowCount = 0;
 
-            string nameZip = $"archive_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.zip";
+            string nameZip = $"archive_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.zip";  // название по умолчанию
             using (var zipArchive = ZipFile.Open(Path.Combine(nameDir, nameZip), ZipArchiveMode.Create))
             {
                 foreach (string file in sourceFiles)
@@ -216,12 +218,14 @@ namespace FileExplorer
                     }
                     else
                     {
+                        // добавляем файл в zip
                         zipArchive.CreateEntryFromFile(file, Path.GetFileName(file), CompressionLevel.Fastest);
                         worker.ReportProgress((int)((++nowCount) * 100 / allCount));
                     }
                 }
                 foreach (string directory in sourceDirs)
                 {
+                    // если архивация остановлена, то выходим
                     if (!AddDirectoryToZip(zipArchive, directory, Path.GetFileName(directory), ref nowCount, ref allCount, ref worker))
                     {
                         e.Cancel = true;
